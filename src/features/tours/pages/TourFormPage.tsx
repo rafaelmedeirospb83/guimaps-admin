@@ -10,6 +10,7 @@ import {
   uploadTourPhoto,
   deleteTourPhoto,
   setPrimaryTourPhoto,
+  listCities,
   type TourCreateRequest, 
   type TourUpdateRequest
 } from '../api'
@@ -36,6 +37,14 @@ export function TourFormPage() {
     queryFn: () => listTourPhotos(id!),
     enabled: isEditing && !!id,
   })
+
+  const { data: cities = [], isLoading: isLoadingCities } = useQuery({
+    queryKey: ['cities'],
+    queryFn: listCities,
+    staleTime: 0,
+    refetchOnMount: 'always',
+  })
+
 
   const createMutation = useMutation({
     mutationFn: createTour,
@@ -102,7 +111,6 @@ export function TourFormPage() {
     title: '',
     description: '',
     duration_minutes: '',
-    base_city: '',
     price_cents: '',
     currency: 'BRL',
     category: '',
@@ -120,7 +128,6 @@ export function TourFormPage() {
       title: tour.title,
       description: tour.description,
       duration_minutes: tour.duration_minutes.toString(),
-      base_city: tour.base_city,
       price_cents: tour.price_cents.toString(),
       currency: tour.currency,
       category: tour.category || '',
@@ -148,7 +155,6 @@ export function TourFormPage() {
       title: formData.title,
       description: formData.description,
       duration_minutes: parseInt(formData.duration_minutes, 10),
-      base_city: formData.base_city,
       price_cents: parseInt(formData.price_cents, 10),
       currency: formData.currency,
       category: formData.category || null,
@@ -167,19 +173,29 @@ export function TourFormPage() {
   }
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file || !id) return
+    const files = e.target.files
+    if (!files || files.length === 0 || !id) return
 
-    if (!file.type.startsWith('image/')) {
-      showToast('Por favor, selecione um arquivo de imagem', 'error')
+    const imageFiles = Array.from(files).filter((file) => file.type.startsWith('image/'))
+
+    if (imageFiles.length === 0) {
+      showToast('Por favor, selecione arquivos de imagem', 'error')
       return
     }
 
     const isPrimary = photos.length === 0
-    uploadPhotoMutation.mutate({ tourId: id, file, isPrimary })
+    imageFiles.forEach((file, index) => {
+      const shouldBePrimary = isPrimary && index === 0
+      uploadPhotoMutation.mutate({ tourId: id, file, isPrimary: shouldBePrimary })
+    })
+
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
+  }
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click()
   }
 
   const handleDeletePhoto = (photoId: string) => {
@@ -258,18 +274,6 @@ export function TourFormPage() {
               onChange={(e) => setFormData((prev) => ({ ...prev, duration_minutes: e.target.value }))}
               required
               min="1"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="base_city" className="block text-sm font-medium text-gray-700 mb-2">
-              Cidade Base *
-            </label>
-            <Input
-              id="base_city"
-              value={formData.base_city}
-              onChange={(e) => setFormData((prev) => ({ ...prev, base_city: e.target.value }))}
-              required
             />
           </div>
 
@@ -368,13 +372,22 @@ export function TourFormPage() {
 
           <div>
             <label htmlFor="city_id" className="block text-sm font-medium text-gray-700 mb-2">
-              ID da Cidade
+              Cidade
             </label>
-            <Input
+            <select
               id="city_id"
               value={formData.city_id}
               onChange={(e) => setFormData((prev) => ({ ...prev, city_id: e.target.value }))}
-            />
+              disabled={isLoadingCities}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
+            >
+              <option value="">{isLoadingCities ? 'Carregando cidades...' : 'Selecione uma cidade'}</option>
+              {cities.map((city) => (
+                <option key={city.id} value={city.id}>
+                  {city.name}, {city.state} - {city.country}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -390,22 +403,21 @@ export function TourFormPage() {
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
+                  multiple
                   onChange={handleFileSelect}
                   className="hidden"
                   id="photo-upload"
                   disabled={uploadPhotoMutation.isPending}
                 />
-                <label htmlFor="photo-upload" className="cursor-pointer">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={uploadPhotoMutation.isPending}
-                    className="cursor-pointer"
-                  >
-                    <Upload className="w-4 h-4" />
-                    {uploadPhotoMutation.isPending ? 'Enviando...' : 'Adicionar Foto'}
-                  </Button>
-                </label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleUploadClick}
+                  disabled={uploadPhotoMutation.isPending}
+                >
+                  <Upload className="w-4 h-4" />
+                  {uploadPhotoMutation.isPending ? 'Enviando...' : 'Adicionar Fotos'}
+                </Button>
               </div>
             </div>
 
@@ -413,16 +425,14 @@ export function TourFormPage() {
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center">
                 <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-600 mb-4">Nenhuma foto adicionada ainda</p>
-                <label htmlFor="photo-upload" className="cursor-pointer inline-block">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="cursor-pointer"
-                  >
-                    <Upload className="w-4 h-4" />
-                    Adicionar Primeira Foto
-                  </Button>
-                </label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleUploadClick}
+                >
+                  <Upload className="w-4 h-4" />
+                  Adicionar Fotos
+                </Button>
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">

@@ -4,6 +4,8 @@ import { LoginPage } from '@features/auth/pages/LoginPage'
 import { DashboardPage } from '@features/dashboard/pages/DashboardPage'
 import { ToursListPage } from '@features/tours/pages/ToursListPage'
 import { TourFormPage } from '@features/tours/pages/TourFormPage'
+import { BookingsListPage } from '@features/bookings/pages/BookingsListPage'
+import { BookingDetailPage } from '@features/bookings/pages/BookingDetailPage'
 import { ProtectedRoute } from '@shared/components/ProtectedRoute'
 import { DashboardLayout } from './layout/DashboardLayout'
 
@@ -61,12 +63,16 @@ export const router = createBrowserRouter([
       },
       {
         path: 'bookings',
-        element: (
-          <div className="p-6">
-            <h1 className="text-2xl font-bold text-gray-900">Reservas</h1>
-            <p className="text-gray-600 mt-2">Gerenciamento de reservas em breve...</p>
-          </div>
-        ),
+        children: [
+          {
+            index: true,
+            element: <BookingsListPage />,
+          },
+          {
+            path: ':id',
+            element: <BookingDetailPage />,
+          },
+        ],
       },
       {
         path: 'settings',

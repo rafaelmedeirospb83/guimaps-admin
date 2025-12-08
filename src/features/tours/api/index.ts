@@ -30,7 +30,6 @@ export type TourCreateRequest = {
   title: string
   description: string
   duration_minutes: number
-  base_city: string
   price_cents: number
   currency: string
   category?: string | null
@@ -45,7 +44,6 @@ export type TourUpdateRequest = {
   title?: string
   description?: string
   duration_minutes?: number
-  base_city?: string
   price_cents?: number
   currency?: string
   category?: string | null
@@ -79,7 +77,7 @@ export const toursService = {
 
   create: async (data: TourCreateRequest): Promise<Tour> => {
     try {
-      const response = await api.post<Tour>('/api/v1/tours', data)
+      const response = await api.post<Tour>('/api/v1/admin/tours', data)
       return response.data
     } catch (error) {
       console.error('Error creating tour:', error)
@@ -89,7 +87,7 @@ export const toursService = {
 
   update: async (tourId: string, data: TourUpdateRequest): Promise<Tour> => {
     try {
-      const response = await api.put<Tour>(`/api/v1/tours/${tourId}`, data)
+      const response = await api.put<Tour>(`/api/v1/admin/tours/${tourId}`, data)
       return response.data
     } catch (error) {
       console.error('Error updating tour:', error)
@@ -99,7 +97,7 @@ export const toursService = {
 
   delete: async (tourId: string): Promise<void> => {
     try {
-      await api.delete(`/api/v1/tours/${tourId}`)
+      await api.delete(`/api/v1/admin/tours/${tourId}`)
     } catch (error) {
       console.error('Error deleting tour:', error)
       throw error
@@ -175,6 +173,18 @@ export const tourPhotosService = {
   },
 }
 
+export const citiesService = {
+  list: async (): Promise<City[]> => {
+    try {
+      const response = await api.get<City[]>('/api/v1/cities')
+      return response.data
+    } catch (error) {
+      console.error('Error listing cities:', error)
+      throw error
+    }
+  },
+}
+
 export const listTours = toursService.list
 export const getTourById = toursService.getById
 export const createTour = toursService.create
@@ -184,4 +194,5 @@ export const listTourPhotos = tourPhotosService.list
 export const uploadTourPhoto = tourPhotosService.upload
 export const deleteTourPhoto = tourPhotosService.delete
 export const setPrimaryTourPhoto = tourPhotosService.setPrimary
+export const listCities = citiesService.list
 
