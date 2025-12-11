@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { Eye, Calendar, Filter } from 'lucide-react'
-import { listBookings, type BookingListItemResponse } from '../api'
+import { listBookings } from '../api'
 import { Button } from '@shared/components/Button'
 import { Input } from '@shared/components/Input'
 

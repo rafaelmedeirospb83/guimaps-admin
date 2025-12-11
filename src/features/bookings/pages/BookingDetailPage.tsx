@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Phone, Mail, Calendar, Clock, Users, DollarSign, MapPin, User, CreditCard, Building2, MessageCircle } from 'lucide-react'
+import { ArrowLeft, Phone, Mail, Calendar, Clock, Users, MapPin, User, CreditCard, Building2, MessageCircle } from 'lucide-react'
 import { getBookingById } from '../api'
 import { Button } from '@shared/components/Button'
 import { openWhatsApp } from '@shared/lib/whatsapp'

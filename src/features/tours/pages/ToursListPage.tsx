@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Pencil, Trash2, MapPin, Clock, DollarSign } from 'lucide-react'
-import { listTours, deleteTour, type Tour } from '../api'
+import { listTours, deleteTour } from '../api'
 import { showToast } from '@shared/components/Toast'
 import { Button } from '@shared/components/Button'
 
