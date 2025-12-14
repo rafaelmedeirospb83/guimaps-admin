@@ -9,7 +9,8 @@ import {
   LogOut,
   Menu,
   X,
-  Route
+  Route,
+  Building2
 } from 'lucide-react'
 import { useState } from 'react'
 import { showToast } from '@shared/components/Toast'
@@ -32,6 +33,7 @@ export function DashboardLayout() {
     { icon: Users, label: 'Usuários', path: '/dashboard/users' },
     { icon: MapPin, label: 'Guias', path: '/dashboard/guides' },
     { icon: Calendar, label: 'Reservas', path: '/dashboard/bookings' },
+    { icon: Building2, label: 'Parceiros', path: '/dashboard/partners' },
     { icon: Settings, label: 'Configurações', path: '/dashboard/settings' },
   ]
 
@@ -65,7 +67,8 @@ export function DashboardLayout() {
             <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
               {menuItems.map((item) => {
                 const Icon = item.icon
-                const isActive = location.pathname === item.path
+                const isActive = location.pathname === item.path || 
+                  (item.path !== '/dashboard' && location.pathname.startsWith(item.path + '/'))
                 return (
                   <a
                     key={item.path}
