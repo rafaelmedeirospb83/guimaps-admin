@@ -9,6 +9,7 @@ import { BookingDetailPage } from '@features/bookings/pages/BookingDetailPage'
 import { PartnersListPage } from '@features/partners/pages/PartnersListPage'
 import { PartnerFormPage } from '@features/partners/pages/PartnerFormPage'
 import { PartnerDetailPage } from '@features/partners/pages/PartnerDetailPage'
+import { GuidesListPage } from '@features/guides/pages/GuidesListPage'
 import { ProtectedRoute } from '@shared/components/ProtectedRoute'
 import { DashboardLayout } from './layout/DashboardLayout'
 
@@ -57,12 +58,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'guides',
-        element: (
-          <div className="p-6">
-            <h1 className="text-2xl font-bold text-gray-900">Guias</h1>
-            <p className="text-gray-600 mt-2">Gerenciamento de guias em breve...</p>
-          </div>
-        ),
+        element: <GuidesListPage />,
       },
       {
         path: 'bookings',
