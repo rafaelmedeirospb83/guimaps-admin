@@ -1,4 +1,3 @@
-import React from 'react'
 import { X } from 'lucide-react'
 import type { PaymentWebhookEventDTO } from '../../../types/adminPayments'
 

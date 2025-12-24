@@ -1,4 +1,3 @@
-import React from 'react'
 import type { PaymentProvidersConfigDTO, UpdatePaymentProvidersConfigDTO } from '../../../types/adminPayments'
 
 interface Props {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { RefreshCw, Search, Eye } from 'lucide-react'
 import type { PaymentWebhookEventDTO, PaymentProviderCode } from '../../../types/adminPayments'
 import { WebhookPayloadModal } from './WebhookPayloadModal'

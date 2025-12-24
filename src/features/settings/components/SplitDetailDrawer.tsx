@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { X, CheckCircle, ArrowRightCircle, RefreshCw } from 'lucide-react'
-import type { PaymentSplitDetail, PayoutListItem } from '../../../types/adminPayments'
+import type { PaymentSplitDetail } from '../../../types/adminPayments'
 import { formatMoneyFromCents, formatDateTime } from '../lib/utils'
 import { PaymentSplitStatusBadge } from './PaymentSplitStatusBadge'
 import { ProviderBadge } from './ProviderBadge'

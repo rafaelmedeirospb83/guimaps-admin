@@ -1,4 +1,3 @@
-import React from 'react'
 import { getSplitStatusConfig } from '../lib/utils'
 
 interface Props {

@@ -1,4 +1,3 @@
-import React from 'react'
 import { Eye } from 'lucide-react'
 import type { PaymentSplitListItem } from '../../../types/adminPayments'
 import { formatMoneyFromCents, formatDateTime } from '../lib/utils'

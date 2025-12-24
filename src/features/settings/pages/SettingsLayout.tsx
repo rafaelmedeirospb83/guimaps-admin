@@ -10,8 +10,6 @@ export function SettingsLayout() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const currentTab = tabs.find((tab) => location.pathname.startsWith(tab.path)) || tabs[0]
-
   return (
     <div className="space-y-6">
       <div>

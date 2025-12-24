@@ -1,4 +1,3 @@
-import React from 'react'
 import { getPayoutStatusConfig } from '../lib/utils'
 
 interface Props {

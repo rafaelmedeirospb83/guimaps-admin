@@ -1,4 +1,3 @@
-import React from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { listFailedWebhooks, reprocessWebhook } from '../api/adminPayments'
 import { FailedWebhooksTable } from '../components/FailedWebhooksTable'
