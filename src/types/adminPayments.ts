@@ -45,6 +45,8 @@ export interface ReprocessWebhookResponseDTO {
 }
 
 // Payment Splits Types
+export type RecipientType = 'GUIDE_USER' | 'PARTNER' | 'PLATFORM'
+
 export interface PaymentSplitListItem {
   id: string
   booking_id: string
@@ -52,9 +54,10 @@ export interface PaymentSplitListItem {
   provider_code: string
   gross_amount_cents: number
   platform_fee_cents: number
-  partner_amount_cents: number
-  partner_type: string
-  partner_id: string
+  recipient_amount_cents: number
+  recipient_type: RecipientType
+  partner_id: string | null
+  guide_user_id: string | null
   status: string
   booking_status: string | null
   payment_status: string | null
@@ -72,7 +75,7 @@ export interface PayoutListItem {
   currency: string
   destination_type: string
   destination_id: string
-  status: string
+  status: 'REQUESTED' | 'PROCESSING' | 'SUCCEEDED' | 'FAILED' | string
   provider_payout_id: string | null
   error_message: string | null
   requested_by_admin_id: string | null
@@ -81,7 +84,7 @@ export interface PayoutListItem {
 }
 
 export interface PaymentSplitDetail extends PaymentSplitListItem {
-  partner_name: string | null
+  partner_name: string | null // Nome do recipient (guia ou partner)
   booking_title: string | null
   payout_history: PayoutListItem[]
 }

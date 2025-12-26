@@ -26,19 +26,19 @@ export function formatDateTime(iso: string | null | undefined): string {
  * Retorna cores e labels para status de split
  */
 export function getSplitStatusConfig(status: string) {
-  const statusLower = status.toLowerCase()
+  const statusUpper = status.toUpperCase()
   
-  if (statusLower.includes('ready') || statusLower.includes('ready_to_pay')) {
+  if (statusUpper === 'READY_TO_PAY') {
     return { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Pronto para Pagar' }
   }
-  if (statusLower.includes('paid') || statusLower.includes('paid_out')) {
+  if (statusUpper === 'PAID') {
     return { bg: 'bg-green-100', text: 'text-green-800', label: 'Pago' }
   }
-  if (statusLower.includes('fail') || statusLower.includes('failed')) {
-    return { bg: 'bg-red-100', text: 'text-red-800', label: 'Falhou' }
+  if (statusUpper === 'CANCELED') {
+    return { bg: 'bg-red-100', text: 'text-red-800', label: 'Cancelado' }
   }
-  if (statusLower.includes('created') || statusLower.includes('waiting')) {
-    return { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Criado' }
+  if (statusUpper === 'PENDING_EVENT') {
+    return { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Pendente' }
   }
   
   return { bg: 'bg-gray-100', text: 'text-gray-800', label: status }
@@ -48,15 +48,18 @@ export function getSplitStatusConfig(status: string) {
  * Retorna cores e labels para status de payout
  */
 export function getPayoutStatusConfig(status: string) {
-  const statusLower = status.toLowerCase()
+  const statusUpper = status.toUpperCase()
   
-  if (statusLower.includes('process') && !statusLower.includes('failed')) {
-    return { bg: 'bg-green-100', text: 'text-green-800', label: 'Processado' }
+  if (statusUpper === 'SUCCEEDED') {
+    return { bg: 'bg-green-100', text: 'text-green-800', label: 'Sucesso' }
   }
-  if (statusLower.includes('request') || statusLower.includes('pending')) {
+  if (statusUpper === 'PROCESSING') {
+    return { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Processando' }
+  }
+  if (statusUpper === 'REQUESTED') {
     return { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Solicitado' }
   }
-  if (statusLower.includes('fail')) {
+  if (statusUpper === 'FAILED') {
     return { bg: 'bg-red-100', text: 'text-red-800', label: 'Falhou' }
   }
   
@@ -78,4 +81,5 @@ export function getProviderBadgeConfig(provider: string) {
   
   return { bg: 'bg-gray-100', text: 'text-gray-800' }
 }
+
 

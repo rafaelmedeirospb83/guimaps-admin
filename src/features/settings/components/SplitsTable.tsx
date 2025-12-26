@@ -45,8 +45,8 @@ export function SplitsTable({
             <th className="py-2 pr-4">Provider</th>
             <th className="py-2 pr-4">Bruto</th>
             <th className="py-2 pr-4">Taxa</th>
-            <th className="py-2 pr-4">Parceiro</th>
-            <th className="py-2 pr-4">Partner</th>
+            <th className="py-2 pr-4">Recipient</th>
+            <th className="py-2 pr-4">Tipo</th>
             <th className="py-2 pr-4">Status</th>
             <th className="py-2 pr-4">Atualizado</th>
             <th className="py-2 pr-4 text-right">Ações</th>
@@ -54,7 +54,7 @@ export function SplitsTable({
         </thead>
         <tbody>
           {splits.map((split) => {
-            const canMarkReady = split.status !== 'READY_TO_PAY' && onMarkReady
+            const canMarkReady = split.status === 'PENDING_EVENT' && onMarkReady
             const canPayNow = split.status === 'READY_TO_PAY' && onPayNow
 
             return (
@@ -77,13 +77,28 @@ export function SplitsTable({
                   {formatMoneyFromCents(split.platform_fee_cents)}
                 </td>
                 <td className="py-3 pr-4 text-xs font-medium text-gray-900">
-                  {formatMoneyFromCents(split.partner_amount_cents)}
+                  {formatMoneyFromCents(split.recipient_amount_cents)}
                 </td>
                 <td className="py-3 pr-4">
                   <div className="flex flex-col text-xs">
-                    <span className="text-gray-700">{split.partner_type}</span>
-                    <span className="text-gray-500 font-mono">{split.partner_id.substring(0, 8)}...</span>
+                    {split.guide_user_id && (
+                      <span className="text-gray-700 font-mono">{split.guide_user_id.substring(0, 8)}...</span>
+                    )}
+                    {split.partner_id && (
+                      <span className="text-gray-700 font-mono">{split.partner_id.substring(0, 8)}...</span>
+                    )}
+                    {!split.guide_user_id && !split.partner_id && (
+                      <span className="text-gray-400">-</span>
+                    )}
                   </div>
+                </td>
+                <td className="py-3 pr-4">
+                  <span className="text-xs text-gray-700">
+                    {split.recipient_type === 'GUIDE_USER' ? 'Guia' : 
+                     split.recipient_type === 'PARTNER' ? 'Parceiro' : 
+                     split.recipient_type === 'PLATFORM' ? 'Plataforma' : 
+                     split.recipient_type}
+                  </span>
                 </td>
                 <td className="py-3 pr-4">
                   <PaymentSplitStatusBadge status={split.status} />

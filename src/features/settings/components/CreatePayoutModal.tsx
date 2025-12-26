@@ -12,7 +12,7 @@ interface Props {
 
 export function CreatePayoutModal({ split, isOpen, onClose, onSubmit }: Props) {
   const [amountCents, setAmountCents] = useState<string>(
-    split.partner_amount_cents.toString(),
+    split.recipient_amount_cents.toString(),
   )
   const [destinationOverrideId, setDestinationOverrideId] = useState('')
   const [notes, setNotes] = useState('')
@@ -34,7 +34,7 @@ export function CreatePayoutModal({ split, isOpen, onClose, onSubmit }: Props) {
 
       await onSubmit(payload)
       // Reset form
-      setAmountCents(split.partner_amount_cents.toString())
+      setAmountCents(split.recipient_amount_cents.toString())
       setDestinationOverrideId('')
       setNotes('')
       setShowAdvanced(false)
@@ -46,7 +46,7 @@ export function CreatePayoutModal({ split, isOpen, onClose, onSubmit }: Props) {
     }
   }
 
-  const defaultAmount = formatMoneyFromCents(split.partner_amount_cents)
+  const defaultAmount = formatMoneyFromCents(split.recipient_amount_cents)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
@@ -76,7 +76,7 @@ export function CreatePayoutModal({ split, isOpen, onClose, onSubmit }: Props) {
               type="number"
               value={amountCents}
               onChange={(e) => setAmountCents(e.target.value)}
-              placeholder={split.partner_amount_cents.toString()}
+              placeholder={split.recipient_amount_cents.toString()}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               min="0"
             />
@@ -150,4 +150,5 @@ export function CreatePayoutModal({ split, isOpen, onClose, onSubmit }: Props) {
     </div>
   )
 }
+
 
