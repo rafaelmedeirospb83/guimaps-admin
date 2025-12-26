@@ -32,7 +32,7 @@ export function SplitDetailDrawer({
 
   if (!isOpen || !split) return null
 
-  const canMarkReady = split.status !== 'READY_TO_PAY'
+  const canMarkReady = split.status === 'PENDING_EVENT'
   const canCreatePayout = split.status === 'READY_TO_PAY'
 
   const handleMarkReady = async () => {
@@ -114,9 +114,9 @@ export function SplitDetailDrawer({
                   </div>
 
                   <div className="rounded-lg border border-gray-100 bg-primary-50 p-4">
-                    <p className="text-xs text-primary-700 mb-1">Valor do Parceiro</p>
+                    <p className="text-xs text-primary-700 mb-1">Valor do Recipient</p>
                     <p className="text-xl font-bold text-primary">
-                      {formatMoneyFromCents(split.partner_amount_cents)}
+                      {formatMoneyFromCents(split.recipient_amount_cents)}
                     </p>
                   </div>
 
@@ -128,9 +128,9 @@ export function SplitDetailDrawer({
                   </div>
                 </div>
 
-                {/* Partner Info */}
+                {/* Recipient Info */}
                 <div className="rounded-lg border border-gray-200 bg-white p-4">
-                  <p className="text-sm font-medium text-gray-700 mb-2">Parceiro</p>
+                  <p className="text-sm font-medium text-gray-700 mb-2">Recipient</p>
                   <div className="space-y-1 text-sm">
                     <div>
                       <span className="text-gray-500">Nome: </span>
@@ -138,12 +138,20 @@ export function SplitDetailDrawer({
                     </div>
                     <div>
                       <span className="text-gray-500">Tipo: </span>
-                      <span className="text-gray-900">{split.partner_type}</span>
+                      <span className="text-gray-900">{split.recipient_type}</span>
                     </div>
-                    <div>
-                      <span className="text-gray-500">ID: </span>
-                      <span className="text-gray-900 font-mono text-xs">{split.partner_id}</span>
-                    </div>
+                    {split.guide_user_id && (
+                      <div>
+                        <span className="text-gray-500">Guide User ID: </span>
+                        <span className="text-gray-900 font-mono text-xs">{split.guide_user_id}</span>
+                      </div>
+                    )}
+                    {split.partner_id && (
+                      <div>
+                        <span className="text-gray-500">Partner ID: </span>
+                        <span className="text-gray-900 font-mono text-xs">{split.partner_id}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -222,7 +230,7 @@ export function SplitDetailDrawer({
                         </thead>
                         <tbody>
                           {split.payout_history.map((payout) => {
-                            const isFailed = payout.status.toLowerCase().includes('fail')
+                            const isFailed = payout.status === 'FAILED'
                             const isRetrying = retryingPayoutId === payout.id
 
                             return (
