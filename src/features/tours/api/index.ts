@@ -203,3 +203,15 @@ export const deleteTourPhoto = tourPhotosService.delete
 export const setPrimaryTourPhoto = tourPhotosService.setPrimary
 export const listCities = citiesService.list
 
+// Export VR Media services
+export {
+  listTourVrMedia,
+  getTourVrMediaPrimary,
+  uploadTourVrPhoto360,
+  uploadTourVrVideo360,
+  deleteTourVrMedia,
+  type VrMediaType,
+  type TourVrMediaItem,
+  type ListVrMediaParams,
+} from './vrMedia'
+

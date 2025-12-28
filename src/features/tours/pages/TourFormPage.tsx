@@ -15,6 +15,7 @@ import {
   type TourUpdateRequest
 } from '../api'
 import { TourTaxonomySelect } from '../components/TourTaxonomySelect'
+import { TourVrMediaSection } from '../components/TourVrMediaSection'
 import { showToast } from '@shared/components/Toast'
 import { Button } from '@shared/components/Button'
 import { Input } from '@shared/components/Input'
@@ -487,6 +488,9 @@ export function TourFormPage() {
             )}
           </div>
         )}
+
+        {/* Seção VR 360 */}
+        {isEditing && id && <TourVrMediaSection tourId={id} />}
 
         <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
           <Button
