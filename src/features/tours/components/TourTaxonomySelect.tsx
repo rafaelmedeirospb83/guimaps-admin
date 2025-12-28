@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { listTourCategories, listTourTags } from '../api/taxonomy'
 import type { CategoryTour, TagTour } from '../types/taxonomy'
