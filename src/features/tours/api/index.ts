@@ -1,4 +1,5 @@
 import { api } from '@shared/lib/axiosInstance'
+import type { CategoryTour, TagTour } from '../types/taxonomy'
 
 export type City = {
   id: string
@@ -16,7 +17,6 @@ export type Tour = {
   base_city: string
   price_cents: number
   currency: string
-  category?: string | null
   has_3d: boolean
   plan_mode: string
   include: string[]
@@ -24,6 +24,9 @@ export type Tour = {
   rating_avg?: number | null
   rating_count: number
   city?: City | null
+  categories?: CategoryTour[]
+  tags?: TagTour[]
+  // Campos legados removidos: category (substituído por categories e tags)
 }
 
 export type TourCreateRequest = {
@@ -32,12 +35,14 @@ export type TourCreateRequest = {
   duration_minutes: number
   price_cents: number
   currency: string
-  category?: string | null
+  category_ids?: string[]
+  tag_ids?: string[]
   has_3d?: boolean
   plan_mode?: string
   include?: string[]
   not_include?: string[]
   city_id?: string | null
+  // Campo legado removido: category (substituído por category_ids e tag_ids)
 }
 
 export type TourUpdateRequest = {
@@ -46,12 +51,14 @@ export type TourUpdateRequest = {
   duration_minutes?: number
   price_cents?: number
   currency?: string
-  category?: string | null
+  category_ids?: string[]
+  tag_ids?: string[]
   has_3d?: boolean
   plan_mode?: string
   include?: string[]
   not_include?: string[]
   city_id?: string | null
+  // Campo legado removido: category (substituído por category_ids e tag_ids)
 }
 
 export const toursService = {

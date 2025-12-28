@@ -116,13 +116,35 @@ export function ToursListPage() {
                   </div>
                 </div>
 
-                {tour.category && (
-                  <div className="mb-4">
-                    <span className="inline-block px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
-                      {tour.category}
-                    </span>
+                {(tour.categories && tour.categories.length > 0) || (tour.tags && tour.tags.length > 0) ? (
+                  <div className="mb-4 space-y-2">
+                    {tour.categories && tour.categories.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {tour.categories.map((category) => (
+                          <span
+                            key={category.id}
+                            className="inline-block px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded font-medium"
+                          >
+                            {category.name}
+                            {category.icon && <span className="ml-1">{category.icon}</span>}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {tour.tags && tour.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {tour.tags.map((tag) => (
+                          <span
+                            key={tag.id}
+                            className="inline-block px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded"
+                          >
+                            {tag.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                )}
+                ) : null}
 
                 <div className="flex items-center gap-2 pt-4 border-t border-gray-200">
                   <Button

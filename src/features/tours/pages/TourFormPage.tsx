@@ -14,6 +14,7 @@ import {
   type TourCreateRequest, 
   type TourUpdateRequest
 } from '../api'
+import { TourTaxonomySelect } from '../components/TourTaxonomySelect'
 import { showToast } from '@shared/components/Toast'
 import { Button } from '@shared/components/Button'
 import { Input } from '@shared/components/Input'
@@ -113,7 +114,8 @@ export function TourFormPage() {
     duration_minutes: '',
     price_cents: '',
     currency: 'BRL',
-    category: '',
+    categoryIds: [] as string[],
+    tagIds: [] as string[],
     has_3d: false,
     plan_mode: 'flex',
     include: '',
@@ -130,7 +132,8 @@ export function TourFormPage() {
       duration_minutes: tour.duration_minutes.toString(),
       price_cents: tour.price_cents.toString(),
       currency: tour.currency,
-      category: tour.category || '',
+      categoryIds: tour.categories?.map((c) => c.id) || [],
+      tagIds: tour.tags?.map((t) => t.id) || [],
       has_3d: tour.has_3d,
       plan_mode: tour.plan_mode,
       include: tour.include.join(', '),
@@ -157,7 +160,8 @@ export function TourFormPage() {
       duration_minutes: parseInt(formData.duration_minutes, 10),
       price_cents: parseInt(formData.price_cents, 10),
       currency: formData.currency,
-      category: formData.category || null,
+      category_ids: formData.categoryIds.length > 0 ? formData.categoryIds : undefined,
+      tag_ids: formData.tagIds.length > 0 ? formData.tagIds : undefined,
       has_3d: formData.has_3d,
       plan_mode: formData.plan_mode,
       include: includeArray,
@@ -308,14 +312,19 @@ export function TourFormPage() {
             </select>
           </div>
 
-          <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
-              Categoria
-            </label>
-            <Input
-              id="category"
-              value={formData.category}
-              onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
+          <div className="md:col-span-2">
+            <TourTaxonomySelect
+              value={{
+                categoryIds: formData.categoryIds,
+                tagIds: formData.tagIds,
+              }}
+              onChange={(value) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  categoryIds: value.categoryIds,
+                  tagIds: value.tagIds,
+                }))
+              }}
             />
           </div>
 
