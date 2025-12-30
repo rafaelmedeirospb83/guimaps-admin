@@ -71,7 +71,11 @@ export async function markSplitReady(splitId: string): Promise<MarkReadyResponse
             data: MarkReadyResponse
           }
         }
-        newError.response = apiError.response
+        if (apiError.response.data) {
+          newError.response = {
+            data: apiError.response.data,
+          }
+        }
         throw newError
       }
     }
