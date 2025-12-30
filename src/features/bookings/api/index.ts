@@ -1,4 +1,5 @@
 import { api } from '@shared/lib/axiosInstance'
+import type { CancelBookingRequest, CancelBookingResponse } from '../../../types/adminBookingCancel'
 
 export type BookingListItemResponse = {
   id: string
@@ -112,4 +113,19 @@ export const bookingsService = {
 
 export const listBookings = bookingsService.list
 export const getBookingById = bookingsService.getById
+
+export async function cancelBookingAdmin(
+  payload: CancelBookingRequest
+): Promise<CancelBookingResponse> {
+  try {
+    const response = await api.post<CancelBookingResponse>(
+      '/api/v1/admin/booking/cancelation',
+      payload
+    )
+    return response.data
+  } catch (error) {
+    console.error('Error cancelling booking:', error)
+    throw error
+  }
+}
 

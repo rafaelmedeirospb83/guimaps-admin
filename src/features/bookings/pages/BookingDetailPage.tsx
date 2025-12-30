@@ -1,18 +1,90 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Phone, Mail, Calendar, Clock, Users, MapPin, User, CreditCard, Building2, MessageCircle } from 'lucide-react'
-import { getBookingById } from '../api'
+import { ArrowLeft, Phone, Mail, Calendar, Clock, Users, MapPin, User, CreditCard, Building2, MessageCircle, XCircle } from 'lucide-react'
+import { getBookingById, cancelBookingAdmin } from '../api'
 import { Button } from '@shared/components/Button'
 import { openWhatsApp } from '@shared/lib/whatsapp'
+import { showToast } from '@shared/components/Toast'
+import { CancelBookingModal } from '../components/CancelBookingModal'
+import { useState } from 'react'
+import type { CancelBookingRequest } from '../../../types/adminBookingCancel'
 
 export function BookingDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const [showCancelModal, setShowCancelModal] = useState(false)
 
   const { data: booking, isLoading } = useQuery({
     queryKey: ['booking', id],
     queryFn: () => getBookingById(id!),
     enabled: !!id,
+  })
+
+  const cancelBookingMutation = useMutation({
+    mutationFn: (payload: CancelBookingRequest) => cancelBookingAdmin(payload),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['booking', id] })
+      queryClient.invalidateQueries({ queryKey: ['bookings'] })
+      
+      showToast('Reserva cancelada com sucesso', 'success')
+
+      if (data.provider_result) {
+        if (data.provider_result.status === 'SUCCESS') {
+          showToast(`Reembolso processado no ${data.provider_result.provider}`, 'success')
+        } else if (data.provider_result.status === 'FAILED') {
+          showToast(
+            `Reserva cancelada, mas reembolso no ${data.provider_result.provider} falhou: ${data.provider_result.error_message || 'Erro desconhecido'}`,
+            'warning'
+          )
+        } else if (data.provider_result.status === 'ALREADY_CANCELLED') {
+          showToast('Reembolso já estava processado', 'info')
+        }
+      }
+
+      setShowCancelModal(false)
+    },
+    onError: (error: unknown) => {
+      let message = 'Erro ao cancelar reserva'
+
+      if (error && typeof error === 'object' && 'response' in error) {
+        const apiError = error as { response?: { status?: number; data?: { message?: string; detail?: string } } }
+        const status = apiError.response?.status
+
+        if (status === 404) {
+          message = 'Reserva não encontrada (pode ter sido removida). Recarregue a página.'
+        } else if (status === 409) {
+          message = 'Reserva concluída não pode ser cancelada.'
+        } else if (status === 502) {
+          message = 'Falha ao processar reembolso no provider. Tente novamente.'
+          const errorDetail = apiError.response?.data?.message || apiError.response?.data?.detail
+          if (errorDetail) {
+            message += ` ${errorDetail}`
+          }
+        } else if (status === 500) {
+          message = 'Erro inesperado. Tente novamente.'
+        } else if (apiError.response?.data?.message) {
+          message = apiError.response.data.message
+        } else if (apiError.response?.data?.detail) {
+          message = apiError.response.data.detail
+        }
+      } else if (error && typeof error === 'object' && 'message' in error) {
+        const errMsg = String((error as { message: unknown }).message)
+        if (errMsg.includes('Network') || errMsg.includes('timeout') || errMsg.includes('ERR_NETWORK')) {
+          message = 'Sem conexão ou servidor indisponível'
+        } else {
+          message = errMsg
+        }
+      } else if (error instanceof Error) {
+        if (error.message.includes('Network') || error.message.includes('timeout')) {
+          message = 'Sem conexão ou servidor indisponível'
+        } else {
+          message = error.message
+        }
+      }
+
+      showToast(message, 'error')
+    },
   })
 
   const formatPrice = (cents: number) => {
@@ -101,13 +173,35 @@ export function BookingDetailPage() {
           <h1 className="text-3xl font-bold text-gray-900">Detalhes da Reserva</h1>
           <p className="text-gray-600 mt-1">ID: {booking.id}</p>
         </div>
-        <span
-          className={`inline-flex px-4 py-2 text-sm font-semibold rounded-lg ${getStatusBadgeColor(
-            booking.status
-          )}`}
-        >
-          {booking.status}
-        </span>
+        <div className="flex items-center gap-3">
+          <span
+            className={`inline-flex px-4 py-2 text-sm font-semibold rounded-lg ${getStatusBadgeColor(
+              booking.status
+            )}`}
+          >
+            {booking.status}
+          </span>
+          {booking.status.toLowerCase() !== 'completed' &&
+            booking.status.toLowerCase() !== 'cancelled' && (
+              <Button
+                variant="outline"
+                onClick={() => setShowCancelModal(true)}
+                className="text-red-600 border-red-300 hover:bg-red-50"
+                aria-label="Cancelar reserva"
+              >
+                <XCircle className="w-4 h-4 mr-2" />
+                Cancelar Reserva
+              </Button>
+            )}
+          {booking.status.toLowerCase() === 'completed' && (
+            <span className="text-xs text-gray-500" title="Reserva concluída não pode ser cancelada">
+              Reserva concluída
+            </span>
+          )}
+          {booking.status.toLowerCase() === 'cancelled' && (
+            <span className="text-xs text-gray-500">Reserva já cancelada</span>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -415,6 +509,18 @@ export function BookingDetailPage() {
           )}
         </div>
       </div>
+
+      {showCancelModal && booking && (
+        <CancelBookingModal
+          bookingId={booking.id}
+          isOpen={showCancelModal}
+          onClose={() => setShowCancelModal(false)}
+          onSubmit={async (payload) => {
+            await cancelBookingMutation.mutateAsync(payload)
+          }}
+          isSubmitting={cancelBookingMutation.isPending}
+        />
+      )}
     </div>
   )
 }
