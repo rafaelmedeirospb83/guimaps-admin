@@ -39,11 +39,48 @@ export async function getPaymentSplitDetail(splitId: string): Promise<PaymentSpl
 }
 
 export async function markSplitReady(splitId: string): Promise<MarkReadyResponse> {
-  const response = await api.post<MarkReadyResponse>(
-    `/api/v1/admin/payments/splits/${splitId}/mark-ready`,
-    {},
-  )
-  return response.data
+  try {
+    const response = await api.post<MarkReadyResponse>(
+      `/api/v1/admin/payments/splits/${splitId}/mark-ready`,
+      {},
+    )
+    
+    if (response.data && response.data.success === false) {
+      const errorMessage = response.data.message || 'Não foi possível marcar split como READY_TO_PAY'
+      const error = new Error(errorMessage) as Error & {
+        response?: {
+          data: MarkReadyResponse
+        }
+        isAxiosError?: boolean
+      }
+      error.response = {
+        data: response.data,
+      }
+      error.isAxiosError = true
+      throw error
+    }
+    
+    return response.data
+  } catch (error: unknown) {
+    if (error && typeof error === 'object' && 'response' in error) {
+      const apiError = error as { response?: { data?: MarkReadyResponse } }
+      if (apiError.response?.data && !apiError.response.data.success) {
+        const errorMessage = apiError.response.data.message || 'Não foi possível marcar split como READY_TO_PAY'
+        const newError = new Error(errorMessage) as Error & {
+          response?: {
+            data: MarkReadyResponse
+          }
+        }
+        if (apiError.response.data) {
+          newError.response = {
+            data: apiError.response.data,
+          }
+        }
+        throw newError
+      }
+    }
+    throw error
+  }
 }
 
 export async function createSplitPayout(

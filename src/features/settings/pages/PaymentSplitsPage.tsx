@@ -43,7 +43,6 @@ export function PaymentSplitsPage() {
     enabled: !!selectedSplitId,
   })
 
-  // Filtro local por busca
   const filteredSplits = useMemo(() => {
     if (!searchQuery) return splits
 
@@ -59,20 +58,38 @@ export function PaymentSplitsPage() {
 
   const markReadyMutation = useMutation({
     mutationFn: markSplitReady,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['payment-splits'] })
-      queryClient.invalidateQueries({ queryKey: ['payment-split-detail', selectedSplitId] })
-      showToast('Split marcado como READY_TO_PAY com sucesso', 'success')
-      refetchDetail()
+    onSuccess: (data) => {
+      if (!data || data.success === false) {
+        const errorMessage = data?.message || 'Não foi possível marcar split como READY_TO_PAY'
+        showToast(errorMessage, 'error')
+        return
+      }
+      
+      if (data.success === true) {
+        queryClient.invalidateQueries({ queryKey: ['payment-splits'] })
+        if (selectedSplitId) {
+          queryClient.invalidateQueries({ queryKey: ['payment-split-detail', selectedSplitId] })
+          refetchDetail()
+        }
+        showToast(data.message || 'Split marcado como READY_TO_PAY com sucesso', 'success')
+      }
     },
     onError: (error: unknown) => {
       let message = 'Erro ao marcar split como ready'
+      
       if (error && typeof error === 'object' && 'response' in error) {
-        const apiError = error as { response?: { data?: { message?: string } }; message?: string }
-        message = apiError.response?.data?.message || apiError.message || message
+        const apiError = error as { response?: { data?: { message?: string; success?: boolean } }; message?: string }
+        if (apiError.response?.data?.message) {
+          message = apiError.response.data.message
+        } else if (apiError.message) {
+          message = apiError.message
+        }
       } else if (error && typeof error === 'object' && 'message' in error) {
         message = String((error as { message: unknown }).message) || message
+      } else if (error instanceof Error) {
+        message = error.message
       }
+      
       showToast(message, 'error')
     },
   })
@@ -85,7 +102,6 @@ export function PaymentSplitsPage() {
       queryClient.invalidateQueries({ queryKey: ['payment-split-detail', selectedSplitId] })
       
       if (data.error) {
-        // Se AbacatePay retornar erro de não implementado
         const errorMsg = data.error.toLowerCase()
         if (errorMsg.includes('not implemented') || errorMsg.includes('não suportado') || errorMsg.includes('não implementado')) {
           showToast('Transferência ainda não suportada para este provider no momento', 'warning')
@@ -146,8 +162,25 @@ export function PaymentSplitsPage() {
     setSelectedSplitId(splitId)
   }
 
-  const handleMarkReady = async (splitId: string) => {
-    markReadyMutation.mutate(splitId)
+  const handleMarkReady = (splitId: string) => {
+    markReadyMutation.mutate(splitId, {
+      onError: (error: unknown) => {
+        let message = 'Erro ao marcar split como ready'
+        
+        if (error && typeof error === 'object' && 'response' in error) {
+          const apiError = error as { response?: { data?: { message?: string } }; message?: string }
+          if (apiError.response?.data?.message) {
+            message = apiError.response.data.message
+          } else if (apiError.message) {
+            message = apiError.message
+          }
+        } else if (error instanceof Error) {
+          message = error.message
+        }
+        
+        showToast(message, 'error')
+      },
+    })
   }
 
   const handlePayNow = (splitId: string) => {

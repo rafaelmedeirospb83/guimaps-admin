@@ -11,9 +11,6 @@ interface Props {
   isLoading?: boolean
 }
 
-/**
- * Modal para exibir detalhes completos de um payout
- */
 export function PayoutDetailModal({ payout, isOpen, onClose, isLoading }: Props) {
   if (!isOpen) return null
 

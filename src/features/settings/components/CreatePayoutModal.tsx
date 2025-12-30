@@ -22,7 +22,6 @@ export function CreatePayoutModal({ split, isOpen, onClose, onSubmit }: Props) {
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Reset ao abrir/fechar
   useEffect(() => {
     if (!isOpen) {
       setStep('form')
@@ -38,7 +37,6 @@ export function CreatePayoutModal({ split, isOpen, onClose, onSubmit }: Props) {
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Validação de segurança: não permitir se split não estiver READY_TO_PAY
     if (split.status !== 'READY_TO_PAY') {
       alert('Apenas splits com status READY_TO_PAY podem receber payout.')
       return
@@ -48,7 +46,6 @@ export function CreatePayoutModal({ split, isOpen, onClose, onSubmit }: Props) {
   }
 
   const handleConfirm = async () => {
-    // Validação de segurança dupla
     if (split.status !== 'READY_TO_PAY') {
       alert('Apenas splits com status READY_TO_PAY podem receber payout.')
       setStep('form')
@@ -68,7 +65,6 @@ export function CreatePayoutModal({ split, isOpen, onClose, onSubmit }: Props) {
       onClose()
     } catch (error) {
       console.error('Error creating payout:', error)
-      // Não fechar modal em caso de erro, deixar usuário ver o erro
     } finally {
       setIsSubmitting(false)
     }
