@@ -44,7 +44,6 @@ export function SplitDetailDrawer({
   
   const isMarkingReady = isMarkingReadyProp || localMarkingReady
 
-  // Buscar detalhes do payout quando selecionado para visualizar
   const { data: viewingPayout, isLoading: isLoadingPayoutDetail } = useQuery({
     queryKey: ['payout-detail', viewingPayoutId],
     queryFn: () => getPayoutDetail(viewingPayoutId!),
@@ -60,6 +59,8 @@ export function SplitDetailDrawer({
     setLocalMarkingReady(true)
     try {
       await onMarkReady()
+    } catch (error) {
+      console.error('Error in handleMarkReady:', error)
     } finally {
       setLocalMarkingReady(false)
     }
@@ -274,7 +275,6 @@ export function SplitDetailDrawer({
                         <tbody>
                           {split.payout_history
                             .sort((a, b) => {
-                              // Ordenar por data (mais recente primeiro)
                               return new Date(b.requested_at).getTime() - new Date(a.requested_at).getTime()
                             })
                             .map((payout) => {
