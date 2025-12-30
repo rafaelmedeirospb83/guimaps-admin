@@ -1,20 +1,27 @@
 import { useState } from 'react'
-import { X, CheckCircle, ArrowRightCircle, RefreshCw } from 'lucide-react'
+import { X, CheckCircle, ArrowRightCircle, RefreshCw, Eye } from 'lucide-react'
 import type { PaymentSplitDetail } from '../../../types/adminPayments'
 import { formatMoneyFromCents, formatDateTime } from '../lib/utils'
 import { PaymentSplitStatusBadge } from './PaymentSplitStatusBadge'
 import { ProviderBadge } from './ProviderBadge'
 import { PayoutStatusBadge } from './PayoutStatusBadge'
 import { CreatePayoutModal } from './CreatePayoutModal'
+import { PayoutDetailModal } from './PayoutDetailModal'
+import { useQuery } from '@tanstack/react-query'
+import { getPayoutDetail } from '../api/paymentSplitsApi'
 
 interface Props {
   split: PaymentSplitDetail | null
   isOpen: boolean
   onClose: () => void
   onMarkReady: () => Promise<void>
-  onCreatePayout: (payload: any) => Promise<void>
+  onCreatePayout: (payload: import('../../../types/adminPayments').CreatePayoutRequest) => Promise<void>
   onRetryPayout: (payoutId: string) => Promise<void>
   isLoading?: boolean
+  isMarkingReady?: boolean
+  isCreatingPayout?: boolean
+  isRetryingPayout?: boolean
+  lastPayoutError?: string | null
 }
 
 export function SplitDetailDrawer({
@@ -25,10 +32,24 @@ export function SplitDetailDrawer({
   onCreatePayout,
   onRetryPayout,
   isLoading,
+  isMarkingReady: isMarkingReadyProp = false,
+  isCreatingPayout: isCreatingPayoutProp = false,
+  isRetryingPayout: isRetryingPayoutProp = false,
+  lastPayoutError,
 }: Props) {
   const [showPayoutModal, setShowPayoutModal] = useState(false)
-  const [isMarkingReady, setIsMarkingReady] = useState(false)
+  const [localMarkingReady, setLocalMarkingReady] = useState(false)
   const [retryingPayoutId, setRetryingPayoutId] = useState<string | null>(null)
+  const [viewingPayoutId, setViewingPayoutId] = useState<string | null>(null)
+  
+  const isMarkingReady = isMarkingReadyProp || localMarkingReady
+
+  // Buscar detalhes do payout quando selecionado para visualizar
+  const { data: viewingPayout, isLoading: isLoadingPayoutDetail } = useQuery({
+    queryKey: ['payout-detail', viewingPayoutId],
+    queryFn: () => getPayoutDetail(viewingPayoutId!),
+    enabled: !!viewingPayoutId,
+  })
 
   if (!isOpen || !split) return null
 
@@ -36,11 +57,11 @@ export function SplitDetailDrawer({
   const canCreatePayout = split.status === 'READY_TO_PAY'
 
   const handleMarkReady = async () => {
-    setIsMarkingReady(true)
+    setLocalMarkingReady(true)
     try {
       await onMarkReady()
     } finally {
-      setIsMarkingReady(false)
+      setLocalMarkingReady(false)
     }
   }
 
@@ -48,8 +69,10 @@ export function SplitDetailDrawer({
     setRetryingPayoutId(payoutId)
     try {
       await onRetryPayout(payoutId)
-    } finally {
       setRetryingPayoutId(null)
+    } catch (error) {
+      setRetryingPayoutId(null)
+      throw error
     }
   }
 
@@ -178,6 +201,25 @@ export function SplitDetailDrawer({
                   </div>
                 </div>
 
+                {/* Banner de Erro (quando payout falhar) */}
+                {lastPayoutError && (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-amber-800">Aviso sobre o último payout</p>
+                        <p className="text-sm text-amber-700 mt-1">{lastPayoutError}</p>
+                        {lastPayoutError.toLowerCase().includes('not implemented') || 
+                         lastPayoutError.toLowerCase().includes('não implementado') || 
+                         lastPayoutError.toLowerCase().includes('não suportado') ? (
+                          <p className="text-xs text-amber-600 mt-2">
+                            Este provider pode ainda não suportar transferências automáticas. Verifique o status do payout no histórico abaixo.
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Ações */}
                 <div className="rounded-lg border border-gray-200 bg-white p-4">
                   <p className="text-sm font-medium text-gray-700 mb-3">Ações</p>
@@ -186,7 +228,7 @@ export function SplitDetailDrawer({
                       <button
                         onClick={handleMarkReady}
                         disabled={isMarkingReady}
-                        className="flex items-center gap-2 rounded-lg border border-yellow-300 bg-yellow-50 px-4 py-2 text-sm font-medium text-yellow-700 hover:bg-yellow-100 disabled:opacity-60"
+                        className="flex items-center gap-2 rounded-lg border border-yellow-300 bg-yellow-50 px-4 py-2 text-sm font-medium text-yellow-700 hover:bg-yellow-100 disabled:opacity-60 disabled:cursor-not-allowed"
                       >
                         <CheckCircle className="w-4 h-4" />
                         {isMarkingReady ? 'Marcando...' : 'Marcar como READY_TO_PAY'}
@@ -196,10 +238,11 @@ export function SplitDetailDrawer({
                     {canCreatePayout && (
                       <button
                         onClick={() => setShowPayoutModal(true)}
-                        className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90"
+                        disabled={isCreatingPayoutProp}
+                        className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-60 disabled:cursor-not-allowed"
                       >
                         <ArrowRightCircle className="w-4 h-4" />
-                        Executar Payout
+                        {isCreatingPayoutProp ? 'Processando...' : 'Executar Payout'}
                       </button>
                     )}
                   </div>
@@ -229,9 +272,14 @@ export function SplitDetailDrawer({
                           </tr>
                         </thead>
                         <tbody>
-                          {split.payout_history.map((payout) => {
-                            const isFailed = payout.status === 'FAILED'
-                            const isRetrying = retryingPayoutId === payout.id
+                          {split.payout_history
+                            .sort((a, b) => {
+                              // Ordenar por data (mais recente primeiro)
+                              return new Date(b.requested_at).getTime() - new Date(a.requested_at).getTime()
+                            })
+                            .map((payout) => {
+                            const isFailed = payout.status === 'FAILED' || !!payout.error_message
+                            const isRetrying = retryingPayoutId === payout.id || (isRetryingPayoutProp && retryingPayoutId === payout.id)
 
                             return (
                               <tr
@@ -256,16 +304,26 @@ export function SplitDetailDrawer({
                                   </div>
                                 </td>
                                 <td className="py-2 pr-4 text-right">
-                                  {isFailed && (
+                                  <div className="flex items-center justify-end gap-2">
                                     <button
-                                      onClick={() => handleRetryPayout(payout.id)}
-                                      disabled={isRetrying}
-                                      className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 disabled:opacity-60 ml-auto"
+                                      onClick={() => setViewingPayoutId(payout.id)}
+                                      className="flex items-center gap-1 text-xs font-medium text-gray-600 hover:text-gray-900"
+                                      title="Ver detalhes"
                                     >
-                                      <RefreshCw className={`w-3 h-3 ${isRetrying ? 'animate-spin' : ''}`} />
-                                      {isRetrying ? 'Reprocessando...' : 'Reprocessar'}
+                                      <Eye className="w-3 h-3" />
+                                      Ver
                                     </button>
-                                  )}
+                                    {isFailed && (
+                                      <button
+                                        onClick={() => handleRetryPayout(payout.id)}
+                                        disabled={isRetrying}
+                                        className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 disabled:opacity-60 disabled:cursor-not-allowed"
+                                      >
+                                        <RefreshCw className={`w-3 h-3 ${isRetrying ? 'animate-spin' : ''}`} />
+                                        {isRetrying ? 'Reprocessando...' : 'Reprocessar'}
+                                      </button>
+                                    )}
+                                  </div>
                                 </td>
                               </tr>
                             )
@@ -289,6 +347,13 @@ export function SplitDetailDrawer({
           onSubmit={onCreatePayout}
         />
       )}
+
+      <PayoutDetailModal
+        payout={viewingPayout || null}
+        isOpen={!!viewingPayoutId}
+        onClose={() => setViewingPayoutId(null)}
+        isLoading={isLoadingPayoutDetail}
+      />
     </>
   )
 }
