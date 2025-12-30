@@ -21,6 +21,7 @@ export function PaymentSplitsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [offset, setOffset] = useState(0)
   const [selectedSplitId, setSelectedSplitId] = useState<string | null>(null)
+  const [lastPayoutError, setLastPayoutError] = useState<string | null>(null)
 
   const { data: splits = [], isLoading, refetch } = useQuery({
     queryKey: ['payment-splits', statusFilter, offset],
@@ -64,9 +65,14 @@ export function PaymentSplitsPage() {
       showToast('Split marcado como READY_TO_PAY com sucesso', 'success')
       refetchDetail()
     },
-    onError: (error: any) => {
-      const message =
-        error.response?.data?.message || error.message || 'Erro ao marcar split como ready'
+    onError: (error: unknown) => {
+      let message = 'Erro ao marcar split como ready'
+      if (error && typeof error === 'object' && 'response' in error) {
+        const apiError = error as { response?: { data?: { message?: string } }; message?: string }
+        message = apiError.response?.data?.message || apiError.message || message
+      } else if (error && typeof error === 'object' && 'message' in error) {
+        message = String((error as { message: unknown }).message) || message
+      }
       showToast(message, 'error')
     },
   })
@@ -80,23 +86,37 @@ export function PaymentSplitsPage() {
       
       if (data.error) {
         // Se AbacatePay retornar erro de não implementado
-        if (data.error.toLowerCase().includes('not implemented') || data.error.toLowerCase().includes('não suportado')) {
+        const errorMsg = data.error.toLowerCase()
+        if (errorMsg.includes('not implemented') || errorMsg.includes('não suportado') || errorMsg.includes('não implementado')) {
           showToast('Transferência ainda não suportada para este provider no momento', 'warning')
+          setLastPayoutError(data.error)
         } else {
           showToast(`Erro no payout: ${data.error}`, 'error')
+          setLastPayoutError(data.error)
         }
       } else {
         showToast('Payout executado com sucesso', 'success')
+        setLastPayoutError(null)
       }
       
       refetchDetail()
     },
-    onError: (error: any) => {
-      const message = error.response?.data?.message || 'Erro ao executar payout'
-      if (message.toLowerCase().includes('not implemented')) {
+    onError: (error: unknown) => {
+      let message = 'Erro ao executar payout'
+      if (error && typeof error === 'object' && 'response' in error) {
+        const apiError = error as { response?: { data?: { message?: string } }; message?: string }
+        message = apiError.response?.data?.message || apiError.message || message
+      } else if (error && typeof error === 'object' && 'message' in error) {
+        message = String((error as { message: unknown }).message) || message
+      }
+      
+      const msgLower = message.toLowerCase()
+      if (msgLower.includes('not implemented') || msgLower.includes('não suportado')) {
         showToast('Transferência ainda não suportada para AbacatePay neste momento', 'warning')
+        setLastPayoutError(message)
       } else {
         showToast(message, 'error')
+        setLastPayoutError(message)
       }
     },
   })
@@ -105,11 +125,19 @@ export function PaymentSplitsPage() {
     mutationFn: retryPayout,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payment-split-detail', selectedSplitId] })
+      queryClient.invalidateQueries({ queryKey: ['payment-splits'] })
       showToast('Payout reprocessado com sucesso', 'success')
+      setLastPayoutError(null)
       refetchDetail()
     },
-    onError: (error: any) => {
-      const message = error.response?.data?.message || 'Erro ao reprocessar payout'
+    onError: (error: unknown) => {
+      let message = 'Erro ao reprocessar payout'
+      if (error && typeof error === 'object' && 'response' in error) {
+        const apiError = error as { response?: { data?: { message?: string } }; message?: string }
+        message = apiError.response?.data?.message || apiError.message || message
+      } else if (error && typeof error === 'object' && 'message' in error) {
+        message = String((error as { message: unknown }).message) || message
+      }
       showToast(message, 'error')
     },
   })
@@ -242,11 +270,18 @@ export function PaymentSplitsPage() {
       <SplitDetailDrawer
         split={selectedSplit || null}
         isOpen={!!selectedSplitId}
-        onClose={() => setSelectedSplitId(null)}
+        onClose={() => {
+          setSelectedSplitId(null)
+          setLastPayoutError(null)
+        }}
         onMarkReady={handleMarkReadyFromDrawer}
         onCreatePayout={handleCreatePayout}
         onRetryPayout={handleRetryPayout}
         isLoading={isLoadingDetail}
+        isMarkingReady={markReadyMutation.isPending}
+        isCreatingPayout={createPayoutMutation.isPending}
+        isRetryingPayout={retryPayoutMutation.isPending}
+        lastPayoutError={lastPayoutError}
       />
     </div>
   )

@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { X } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { X, AlertTriangle } from 'lucide-react'
 import type { CreatePayoutRequest, PaymentSplitDetail } from '../../../types/adminPayments'
 import { formatMoneyFromCents } from '../lib/utils'
 
@@ -10,7 +10,10 @@ interface Props {
   onSubmit: (payload: CreatePayoutRequest) => Promise<void>
 }
 
+type ModalStep = 'form' | 'confirm'
+
 export function CreatePayoutModal({ split, isOpen, onClose, onSubmit }: Props) {
+  const [step, setStep] = useState<ModalStep>('form')
   const [amountCents, setAmountCents] = useState<string>(
     split.recipient_amount_cents.toString(),
   )
@@ -19,10 +22,39 @@ export function CreatePayoutModal({ split, isOpen, onClose, onSubmit }: Props) {
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // Reset ao abrir/fechar
+  useEffect(() => {
+    if (!isOpen) {
+      setStep('form')
+      setAmountCents(split.recipient_amount_cents.toString())
+      setDestinationOverrideId('')
+      setNotes('')
+      setShowAdvanced(false)
+    }
+  }, [isOpen, split.recipient_amount_cents])
+
   if (!isOpen) return null
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Validação de segurança: não permitir se split não estiver READY_TO_PAY
+    if (split.status !== 'READY_TO_PAY') {
+      alert('Apenas splits com status READY_TO_PAY podem receber payout.')
+      return
+    }
+    
+    setStep('confirm')
+  }
+
+  const handleConfirm = async () => {
+    // Validação de segurança dupla
+    if (split.status !== 'READY_TO_PAY') {
+      alert('Apenas splits com status READY_TO_PAY podem receber payout.')
+      setStep('form')
+      return
+    }
+    
     setIsSubmitting(true)
 
     try {
@@ -33,20 +65,22 @@ export function CreatePayoutModal({ split, isOpen, onClose, onSubmit }: Props) {
       }
 
       await onSubmit(payload)
-      // Reset form
-      setAmountCents(split.recipient_amount_cents.toString())
-      setDestinationOverrideId('')
-      setNotes('')
-      setShowAdvanced(false)
       onClose()
     } catch (error) {
       console.error('Error creating payout:', error)
+      // Não fechar modal em caso de erro, deixar usuário ver o erro
     } finally {
       setIsSubmitting(false)
     }
   }
 
+  const handleBack = () => {
+    setStep('form')
+  }
+
   const defaultAmount = formatMoneyFromCents(split.recipient_amount_cents)
+  const finalAmountCents = amountCents ? parseInt(amountCents, 10) : split.recipient_amount_cents
+  const finalAmount = formatMoneyFromCents(finalAmountCents)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
@@ -66,8 +100,10 @@ export function CreatePayoutModal({ split, isOpen, onClose, onSubmit }: Props) {
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        {/* Content */}
+        <div className="p-6">
+          {step === 'form' ? (
+            <form onSubmit={handleFormSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Valor (centavos)
@@ -127,25 +163,77 @@ export function CreatePayoutModal({ split, isOpen, onClose, onSubmit }: Props) {
             )}
           </div>
 
-          {/* Footer */}
-          <div className="flex justify-end gap-2 pt-4 border-t">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isSubmitting}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-60"
-            >
-              {isSubmitting ? 'Processando...' : 'Executar Payout'}
-            </button>
-          </div>
-        </form>
+              {/* Footer */}
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  disabled={isSubmitting}
+                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-60"
+                >
+                  Continuar
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="space-y-4">
+              {/* Confirmação */}
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-amber-800 mb-2">Confirme os detalhes do payout</p>
+                    <div className="space-y-2 text-sm text-amber-700">
+                      <div>
+                        <span className="font-medium">Valor:</span> {finalAmount}
+                      </div>
+                      {destinationOverrideId && (
+                        <div>
+                          <span className="font-medium">Destination Override:</span> {destinationOverrideId}
+                        </div>
+                      )}
+                      {notes && (
+                        <div>
+                          <span className="font-medium">Observações:</span> {notes}
+                        </div>
+                      )}
+                      <div>
+                        <span className="font-medium">Recipient:</span> {split.partner_name || split.recipient_type}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  disabled={isSubmitting}
+                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                >
+                  Voltar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirm}
+                  disabled={isSubmitting}
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? 'Processando...' : 'Confirmar e Executar Payout'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
