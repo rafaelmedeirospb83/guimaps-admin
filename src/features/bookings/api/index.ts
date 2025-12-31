@@ -1,6 +1,14 @@
 import { api } from '@shared/lib/axiosInstance'
 import type { CancelBookingRequest, CancelBookingResponse } from '../../../types/adminBookingCancel'
 
+export type BookingAffiliateResponse = {
+  affiliate_link_id: string | null
+  affiliate_code: string | null
+  partner_id: string | null
+  partner_name: string | null
+  partner_slug: string | null
+}
+
 export type BookingListItemResponse = {
   id: string
   date: string
@@ -16,6 +24,7 @@ export type BookingListItemResponse = {
   guide_name: string
   tourist_name: string | null
   payment_status: string | null
+  affiliate: BookingAffiliateResponse | null
 }
 
 export type BookingGuideResponse = {
