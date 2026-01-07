@@ -40,6 +40,8 @@ export function TourFormPage() {
     enabled: isEditing && !!id,
   })
 
+  const generalPhotos = photos.filter((photo) => photo.photo_type !== 'vr_360')
+
   const { data: cities = [], isLoading: isLoadingCities } = useQuery({
     queryKey: ['cities'],
     queryFn: listCities,
@@ -431,7 +433,7 @@ export function TourFormPage() {
               </div>
             </div>
 
-            {photos.length === 0 ? (
+            {generalPhotos.length === 0 ? (
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center">
                 <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-600 mb-4">Nenhuma foto adicionada ainda</p>
@@ -446,7 +448,7 @@ export function TourFormPage() {
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {photos.map((photo) => (
+                {generalPhotos.map((photo) => (
                   <div
                     key={photo.id}
                     className="relative group bg-gray-100 rounded-lg overflow-hidden aspect-square"
