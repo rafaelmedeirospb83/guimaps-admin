@@ -206,7 +206,6 @@ export const listCities = citiesService.list
 // Export VR Media services
 export {
   listTourVrMedia,
-  getTourVrMediaPrimary,
   uploadTourVrPhoto360,
   uploadTourVrVideo360,
   deleteTourVrMedia,
