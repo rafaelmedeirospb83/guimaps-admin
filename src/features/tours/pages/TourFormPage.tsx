@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Save, Upload, Trash2, Star, Image as ImageIcon } from 'lucide-react'
@@ -40,7 +40,9 @@ export function TourFormPage() {
     enabled: isEditing && !!id,
   })
 
-  const generalPhotos = photos.filter((photo) => photo.photo_type !== 'vr_360')
+  const generalPhotos = useMemo(() => {
+    return photos.filter((photo) => photo.photo_type === 'general')
+  }, [photos])
 
   const { data: cities = [], isLoading: isLoadingCities } = useQuery({
     queryKey: ['cities'],
