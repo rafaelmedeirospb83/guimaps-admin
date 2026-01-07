@@ -49,6 +49,7 @@ export function TourVrMediaSection({ tourId }: Props) {
       uploadTourVrPhoto360(tourId, file, { is_primary: isPrimary }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tour-vr-media', tourId] })
+      queryClient.invalidateQueries({ queryKey: ['tour-photos', tourId] })
       showToast('Foto 360° enviada com sucesso', 'success')
       if (photoFileInputRef.current) {
         photoFileInputRef.current.value = ''
@@ -97,6 +98,7 @@ export function TourVrMediaSection({ tourId }: Props) {
     mutationFn: (mediaId: string) => deleteTourVrMedia(tourId, mediaId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tour-vr-media', tourId] })
+      queryClient.invalidateQueries({ queryKey: ['tour-photos', tourId] })
       showToast('Mídia VR excluída com sucesso', 'success')
     },
     onError: (error: unknown) => {
