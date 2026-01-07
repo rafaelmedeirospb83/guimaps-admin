@@ -46,30 +46,6 @@ export const tourVrMediaService = {
     }
   },
 
-  /**
-   * Busca a mídia VR primária de um tour (para preview confiável)
-   */
-  getPrimary: async (tourId: string, params: { media_type: VrMediaType; expires_in?: number }): Promise<TourVrMediaItem | null> => {
-    try {
-      const response = await api.get<TourVrMediaItem>(`/api/v1/tours/${tourId}/vr-media/primary`, {
-        params: {
-          media_type: params.media_type,
-          ...(params.expires_in && { expires_in: params.expires_in }),
-        },
-      })
-      return response.data
-    } catch (error) {
-      // Se não encontrar (404), retorna null
-      if (error && typeof error === 'object' && 'response' in error) {
-        const apiError = error as { response?: { status?: number } }
-        if (apiError.response?.status === 404) {
-          return null
-        }
-      }
-      console.error('Error getting primary VR media:', error)
-      throw error
-    }
-  },
 
   /**
    * Upload de foto VR 360
@@ -135,7 +111,6 @@ export const tourVrMediaService = {
 
 // Exports nomeados para facilitar uso
 export const listTourVrMedia = tourVrMediaService.list
-export const getTourVrMediaPrimary = tourVrMediaService.getPrimary
 export const uploadTourVrPhoto360 = tourVrMediaService.uploadPhoto360
 export const uploadTourVrVideo360 = tourVrMediaService.uploadVideo360
 export const deleteTourVrMedia = tourVrMediaService.delete

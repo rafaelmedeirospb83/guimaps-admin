@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Upload, Image as ImageIcon, Video, AlertCircle } from 'lucide-react'
 import {
   listTourVrMedia,
-  getTourVrMediaPrimary,
   uploadTourVrPhoto360,
   uploadTourVrVideo360,
   deleteTourVrMedia,
@@ -152,24 +151,11 @@ export function TourVrMediaSection({ tourId }: Props) {
     setPreviewMedia(null)
 
     try {
-      // Buscar versão primária atualizada para garantir URL válida
-      const primaryMedia = await getTourVrMediaPrimary(tourId, {
-        media_type: activeTab,
-        expires_in: 600,
-      })
-
-      if (primaryMedia && primaryMedia.id === mediaItem.id) {
-        setPreviewMedia(primaryMedia)
-      } else {
-        // Se não for primária ou não encontrar, usar a item atual
-        // Refetch da lista para obter URL atualizada
-        const updatedList = await refetchList()
-        const updatedItem = updatedList.data?.find((item) => item.id === mediaItem.id)
-        setPreviewMedia(updatedItem || mediaItem)
-      }
+      const updatedList = await refetchList()
+      const updatedItem = updatedList.data?.find((item) => item.id === mediaItem.id)
+      setPreviewMedia(updatedItem || mediaItem)
     } catch (error) {
       console.error('Erro ao carregar preview:', error)
-      // Mesmo com erro, tenta usar a URL original
       setPreviewMedia(mediaItem)
     } finally {
       setIsLoadingPreview(false)
