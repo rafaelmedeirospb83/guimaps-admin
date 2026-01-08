@@ -19,14 +19,15 @@ export type Tour = {
   currency: string
   has_3d: boolean
   plan_mode: string
-  include: string[]
-  not_include: string[]
+  include?: string[]
+  not_include?: string[]
+  include_items?: string[]
+  not_include_items?: string[]
   rating_avg?: number | null
   rating_count: number
   city?: City | null
   categories?: CategoryTour[]
   tags?: TagTour[]
-  // Campos legados removidos: category (substituído por categories e tags)
 }
 
 export type TourCreateRequest = {
@@ -39,10 +40,9 @@ export type TourCreateRequest = {
   tag_ids?: string[]
   has_3d?: boolean
   plan_mode?: string
-  include?: string[]
-  not_include?: string[]
+  include_items?: string[]
+  not_include_items?: string[]
   city_id?: string | null
-  // Campo legado removido: category (substituído por category_ids e tag_ids)
 }
 
 export type TourUpdateRequest = {
@@ -55,10 +55,9 @@ export type TourUpdateRequest = {
   tag_ids?: string[]
   has_3d?: boolean
   plan_mode?: string
-  include?: string[]
-  not_include?: string[]
+  include_items?: string[]
+  not_include_items?: string[]
   city_id?: string | null
-  // Campo legado removido: category (substituído por category_ids e tag_ids)
 }
 
 export const toursService = {

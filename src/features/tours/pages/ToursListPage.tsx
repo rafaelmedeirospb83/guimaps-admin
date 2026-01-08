@@ -103,7 +103,7 @@ export function ToursListPage() {
                   )}
                 </div>
 
-                <p className="text-sm text-gray-600 mb-4 line-clamp-2">{tour.description}</p>
+                <p className="text-sm text-gray-600 mb-4 line-clamp-2 whitespace-pre-line">{tour.description}</p>
 
                 <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
                   <div className="flex items-center gap-1">
