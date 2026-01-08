@@ -10,6 +10,8 @@ import { PartnersListPage } from '@features/partners/pages/PartnersListPage'
 import { PartnerFormPage } from '@features/partners/pages/PartnerFormPage'
 import { PartnerDetailPage } from '@features/partners/pages/PartnerDetailPage'
 import { GuidesListPage } from '@features/guides/pages/GuidesListPage'
+import { UsersListPage } from '@features/users/pages/UsersListPage'
+import { UserDetailPage } from '@features/users/pages/UserDetailPage'
 import { SettingsLayout } from '@features/settings/pages/SettingsLayout'
 import { PaymentsSettingsPage } from '@features/settings/pages/PaymentsSettingsPage'
 import { PaymentSplitsPage } from '@features/settings/pages/PaymentSplitsPage'
@@ -36,12 +38,16 @@ export const router = createBrowserRouter([
       },
       {
         path: 'users',
-        element: (
-          <div className="p-6">
-            <h1 className="text-2xl font-bold text-gray-900">Usuários</h1>
-            <p className="text-gray-600 mt-2">Gerenciamento de usuários em breve...</p>
-          </div>
-        ),
+        children: [
+          {
+            index: true,
+            element: <UsersListPage />,
+          },
+          {
+            path: ':id',
+            element: <UserDetailPage />,
+          },
+        ],
       },
       {
         path: 'tours',
