@@ -19,6 +19,15 @@ import { TourVrMediaSection } from '../components/TourVrMediaSection'
 import { showToast } from '@shared/components/Toast'
 import { Button } from '@shared/components/Button'
 import { Input } from '@shared/components/Input'
+import {
+  splitCommaListToArray,
+  joinArrayToCommaList,
+  minutesToHoursMinutes,
+  hoursMinutesToMinutes,
+  formatCentsToBRL,
+  parseBRLToCents,
+  normalizeLineBreaks,
+} from '../lib/formUtils'
 
 export function TourFormPage() {
   const navigate = useNavigate()
@@ -116,8 +125,9 @@ export function TourFormPage() {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
+    duration_hours: '',
     duration_minutes: '',
-    price_cents: '',
+    price_brl: '',
     currency: 'BRL',
     categoryIds: [] as string[],
     tagIds: [] as string[],
@@ -130,19 +140,24 @@ export function TourFormPage() {
 
   useEffect(() => {
     if (!tour) return
-    
+
+    const { hours, minutes } = minutesToHoursMinutes(tour.duration_minutes)
+    const includeArray = tour.include_items || tour.include || []
+    const notIncludeArray = tour.not_include_items || tour.not_include || []
+
     setFormData({
       title: tour.title,
       description: tour.description,
-      duration_minutes: tour.duration_minutes.toString(),
-      price_cents: tour.price_cents.toString(),
+      duration_hours: hours.toString(),
+      duration_minutes: minutes.toString(),
+      price_brl: formatCentsToBRL(tour.price_cents),
       currency: tour.currency,
       categoryIds: tour.categories?.map((c) => c.id) || [],
       tagIds: tour.tags?.map((t) => t.id) || [],
       has_3d: tour.has_3d,
       plan_mode: tour.plan_mode,
-      include: tour.include.join(', '),
-      not_include: tour.not_include.join(', '),
+      include: joinArrayToCommaList(includeArray),
+      not_include: joinArrayToCommaList(notIncludeArray),
       city_id: tour.city?.id || '',
     })
   }, [tour])
@@ -150,27 +165,38 @@ export function TourFormPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    const includeArray = formData.include
-      .split(',')
-      .map((item) => item.trim())
-      .filter(Boolean)
-    const notIncludeArray = formData.not_include
-      .split(',')
-      .map((item) => item.trim())
-      .filter(Boolean)
+    const durationHours = parseInt(formData.duration_hours, 10) || 0
+    const durationMins = parseInt(formData.duration_minutes, 10) || 0
+    const totalMinutes = hoursMinutesToMinutes(durationHours, durationMins)
+
+    if (totalMinutes <= 0) {
+      showToast('A duração deve ser maior que zero', 'error')
+      return
+    }
+
+    const priceCents = parseBRLToCents(formData.price_brl)
+
+    if (priceCents === null || priceCents <= 0) {
+      showToast('O preço deve ser maior que zero', 'error')
+      return
+    }
+
+    const includeArray = splitCommaListToArray(formData.include)
+    const notIncludeArray = splitCommaListToArray(formData.not_include)
+    const normalizedDescription = normalizeLineBreaks(formData.description)
 
     const payload: TourCreateRequest | TourUpdateRequest = {
       title: formData.title,
-      description: formData.description,
-      duration_minutes: parseInt(formData.duration_minutes, 10),
-      price_cents: parseInt(formData.price_cents, 10),
+      description: normalizedDescription,
+      duration_minutes: totalMinutes,
+      price_cents: priceCents,
       currency: formData.currency,
       category_ids: formData.categoryIds.length > 0 ? formData.categoryIds : undefined,
       tag_ids: formData.tagIds.length > 0 ? formData.tagIds : undefined,
       has_3d: formData.has_3d,
       plan_mode: formData.plan_mode,
-      include: includeArray,
-      not_include: notIncludeArray,
+      include_items: includeArray.length > 0 ? includeArray : undefined,
+      not_include_items: notIncludeArray.length > 0 ? notIncludeArray : undefined,
       city_id: formData.city_id || null,
     }
 
@@ -268,7 +294,27 @@ export function TourFormPage() {
               onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
               required
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary whitespace-pre-line"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="duration_hours" className="block text-sm font-medium text-gray-700 mb-2">
+              Duração (horas) *
+            </label>
+            <Input
+              id="duration_hours"
+              type="number"
+              value={formData.duration_hours}
+              onChange={(e) => {
+                const val = e.target.value
+                if (val === '' || (!Number.isNaN(parseInt(val, 10)) && parseInt(val, 10) >= 0)) {
+                  setFormData((prev) => ({ ...prev, duration_hours: val }))
+                }
+              }}
+              required
+              min="0"
+              placeholder="0"
             />
           </div>
 
@@ -280,23 +326,31 @@ export function TourFormPage() {
               id="duration_minutes"
               type="number"
               value={formData.duration_minutes}
-              onChange={(e) => setFormData((prev) => ({ ...prev, duration_minutes: e.target.value }))}
+              onChange={(e) => {
+                const val = e.target.value
+                const num = parseInt(val, 10)
+                if (val === '' || (!Number.isNaN(num) && num >= 0 && num <= 59)) {
+                  setFormData((prev) => ({ ...prev, duration_minutes: val }))
+                }
+              }}
               required
-              min="1"
+              min="0"
+              max="59"
+              placeholder="0"
             />
           </div>
 
           <div>
-            <label htmlFor="price_cents" className="block text-sm font-medium text-gray-700 mb-2">
-              Preço (centavos) *
+            <label htmlFor="price_brl" className="block text-sm font-medium text-gray-700 mb-2">
+              Preço (R$) *
             </label>
             <Input
-              id="price_cents"
-              type="number"
-              value={formData.price_cents}
-              onChange={(e) => setFormData((prev) => ({ ...prev, price_cents: e.target.value }))}
+              id="price_brl"
+              type="text"
+              value={formData.price_brl}
+              onChange={(e) => setFormData((prev) => ({ ...prev, price_brl: e.target.value }))}
               required
-              min="0"
+              placeholder="199,90"
             />
           </div>
 
