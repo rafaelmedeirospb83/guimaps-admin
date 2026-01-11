@@ -1,3 +1,5 @@
+export type PartnerApprovalStatus = 'pending' | 'approved' | 'rejected'
+
 export interface PartnerPublic {
   id: string
   name: string
@@ -21,6 +23,13 @@ export interface PartnerPublic {
   avg_ticket_cents?: number | null
   highlight_home: boolean
   is_active: boolean
+  user_id?: string | null
+  city_name?: string | null
+  approval_status?: PartnerApprovalStatus
+  approved_at?: string | null
+  rejection_reason?: string | null
+  is_establishment?: boolean
+  created_at?: string
 }
 
 export interface PartnerCreatePayload {
@@ -150,5 +159,10 @@ export interface PartnerCommissionsResponse {
 
 export interface PayCommissionRequest {
   paid_at?: string | null
+}
+
+export interface PartnerApprovalPayload {
+  approval_status: PartnerApprovalStatus
+  rejection_reason?: string | null
 }
 
