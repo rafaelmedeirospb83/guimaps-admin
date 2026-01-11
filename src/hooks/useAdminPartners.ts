@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   listPartners,
-  getPartnerDetailBySlug,
+  getAdminPartnerDetail,
   createPartner,
   updatePartner,
   createAffiliateLinkForPartner,
@@ -16,11 +16,11 @@ import {
   updatePartnerTour,
   deletePartnerTour,
   type ListPartnersParams,
+  updatePartnerApproval,
 } from '../api/adminPartners'
 
 import type {
   PartnerPublic,
-  PartnerDetailResponse,
   PartnerCreatePayload,
   PartnerUpdatePayload,
   AffiliateLinkCreatePayload,
@@ -32,6 +32,7 @@ import type {
   PartnerTourPublic,
   PartnerTourCreatePayload,
   PartnerTourUpdatePayload,
+  PartnerApprovalPayload,
 } from '../types/partners'
 
 export function usePartnersList(params: ListPartnersParams = {}) {
@@ -41,11 +42,11 @@ export function usePartnersList(params: ListPartnersParams = {}) {
   })
 }
 
-export function usePartnerDetail(slug: string | undefined) {
-  return useQuery<PartnerDetailResponse>({
-    queryKey: ['admin-partner-detail', slug],
-    queryFn: () => getPartnerDetailBySlug(slug!),
-    enabled: Boolean(slug),
+export function usePartnerDetail(partnerId: string | undefined) {
+  return useQuery<PartnerPublic>({
+    queryKey: ['admin-partner-detail', partnerId],
+    queryFn: () => getAdminPartnerDetail(partnerId!),
+    enabled: Boolean(partnerId),
   })
 }
 
@@ -65,6 +66,18 @@ export function useUpdatePartner(partnerId: string | undefined) {
 
   return useMutation({
     mutationFn: (payload: PartnerUpdatePayload) => updatePartner(partnerId!, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-partners'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-partner-detail'] })
+    },
+  })
+}
+
+export function useUpdatePartnerApproval(partnerId: string | undefined) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: PartnerApprovalPayload) => updatePartnerApproval(partnerId!, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-partners'] })
       queryClient.invalidateQueries({ queryKey: ['admin-partner-detail'] })

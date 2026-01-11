@@ -14,9 +14,9 @@ export function PartnerFormPage() {
   const { slug } = useParams<{ slug: string }>()
   const isEditing = !!slug
 
-  const { data: partnerDetail, isLoading: isLoadingDetail } = usePartnerDetail(slug)
+  const { data: partner, isLoading: isLoadingDetail } = usePartnerDetail(slug)
   const createMutation = useCreatePartner()
-  const updateMutation = useUpdatePartner(partnerDetail?.partner.id)
+  const updateMutation = useUpdatePartner(partner?.id)
 
   const { data: cities = [] } = useQuery<City[]>({
     queryKey: ['cities'],
@@ -44,8 +44,7 @@ export function PartnerFormPage() {
   })
 
   useEffect(() => {
-    if (partnerDetail?.partner) {
-      const partner = partnerDetail.partner
+    if (partner) {
       setFormData({
         name: partner.name,
         slug: partner.slug,
@@ -66,7 +65,7 @@ export function PartnerFormPage() {
         is_active: partner.is_active,
       })
     }
-  }, [partnerDetail])
+  }, [partner])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -93,11 +92,11 @@ export function PartnerFormPage() {
       is_active: formData.is_active,
     }
 
-    if (isEditing && partnerDetail?.partner.id) {
+    if (isEditing && partner?.id) {
       updateMutation.mutate(payload as PartnerUpdatePayload, {
         onSuccess: () => {
           showToast('Partner atualizado com sucesso', 'success')
-          navigate(`/dashboard/partners/${formData.slug || partnerDetail.partner.slug}`)
+          navigate(`/dashboard/partners/${partner.id}`)
         },
         onError: () => {
           showToast('Erro ao atualizar partner', 'error')
@@ -107,7 +106,7 @@ export function PartnerFormPage() {
       createMutation.mutate(payload as PartnerCreatePayload, {
         onSuccess: (data) => {
           showToast('Partner criado com sucesso', 'success')
-          navigate(`/dashboard/partners/${data.slug}`)
+          navigate(`/dashboard/partners/${data.id}`)
         },
         onError: () => {
           showToast('Erro ao criar partner', 'error')

@@ -3,7 +3,6 @@ import type {
   PartnerPublic,
   PartnerCreatePayload,
   PartnerUpdatePayload,
-  PartnerDetailResponse,
   AffiliateLinkCreatePayload,
   PartnerCommissionsResponse,
   PayCommissionRequest,
@@ -13,22 +12,34 @@ import type {
   PartnerTourPublic,
   PartnerTourCreatePayload,
   PartnerTourUpdatePayload,
+  PartnerApprovalPayload,
+  PartnerApprovalStatus,
 } from '../types/partners'
 
 export interface ListPartnersParams {
-  city_id?: string
-  type?: string
-  neighborhood?: string
-  highlight_only?: boolean
+  approval_status?: PartnerApprovalStatus
+  is_active?: boolean
+  search?: string
 }
 
 export async function listPartners(params: ListPartnersParams = {}): Promise<PartnerPublic[]> {
-  const response = await api.get<PartnerPublic[]>('/api/v1/partners', { params })
+  const response = await api.get<PartnerPublic[]>('/api/v1/admin/partners', { params })
   return response.data
 }
 
-export async function getPartnerDetailBySlug(slug: string): Promise<PartnerDetailResponse> {
-  const response = await api.get<PartnerDetailResponse>(`/api/v1/partners/${slug}`)
+export async function getAdminPartnerDetail(partnerId: string): Promise<PartnerPublic> {
+  const response = await api.get<PartnerPublic>(`/api/v1/admin/partners/${partnerId}`)
+  return response.data
+}
+
+export async function updatePartnerApproval(
+  partnerId: string,
+  payload: PartnerApprovalPayload,
+): Promise<PartnerPublic> {
+  const response = await api.patch<PartnerPublic>(
+    `/api/v1/admin/partners/${partnerId}/approval`,
+    payload,
+  )
   return response.data
 }
 

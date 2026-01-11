@@ -27,23 +27,30 @@ import {
   useCreateAffiliateLink,
   usePartnerCommissions,
   usePayPartnerCommission,
+  useUpdatePartnerApproval,
 } from '../../../hooks/useAdminPartners'
 import { listTours, listCities, type City, type Tour } from '@features/tours/api'
 import { showToast } from '@shared/components/Toast'
 import { Button } from '@shared/components/Button'
 import { Input } from '@shared/components/Input'
-import type { PartnerUpdatePayload, PartnerPhotoCreatePayload } from '../../../types/partners'
+import type {
+  PartnerUpdatePayload,
+  PartnerPhotoCreatePayload,
+  PartnerApprovalStatus,
+} from '../../../types/partners'
 
 export function PartnerDetailPage() {
-  const { slug } = useParams<{ slug: string }>()
+  const { id: partnerId } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const { data: partnerDetail, isLoading: isLoadingDetail } = usePartnerDetail(slug)
-  const partner = partnerDetail?.partner
-  const partnerId = partner?.id
+  const { data: partner, isLoading: isLoadingDetail } = usePartnerDetail(partnerId)
 
   const updateMutation = useUpdatePartner(partnerId)
+  const approvalMutation = useUpdatePartnerApproval(partnerId)
+
+  const [showRejectModal, setShowRejectModal] = useState(false)
+  const [rejectionReason, setRejectionReason] = useState('')
 
   // Fotos
   const { data: photos = [] } = usePartnerPhotos(partnerId)
@@ -358,6 +365,66 @@ export function PartnerDetailPage() {
     )
   }
 
+  const handleApprove = () => {
+    approvalMutation.mutate(
+      { approval_status: 'approved' },
+      {
+        onSuccess: () => {
+          showToast('Parceiro aprovado com sucesso', 'success')
+        },
+        onError: () => {
+          showToast('Erro ao aprovar parceiro', 'error')
+        },
+      },
+    )
+  }
+
+  const handleReject = () => {
+    if (!rejectionReason.trim()) {
+      showToast('Informe o motivo da rejeição', 'error')
+      return
+    }
+    approvalMutation.mutate(
+      { approval_status: 'rejected', rejection_reason: rejectionReason },
+      {
+        onSuccess: () => {
+          showToast('Parceiro rejeitado', 'success')
+          setShowRejectModal(false)
+          setRejectionReason('')
+        },
+        onError: () => {
+          showToast('Erro ao rejeitar parceiro', 'error')
+        },
+      },
+    )
+  }
+
+  const handleSetPending = () => {
+    approvalMutation.mutate(
+      { approval_status: 'pending' },
+      {
+        onSuccess: () => {
+          showToast('Parceiro voltou para pendente', 'success')
+        },
+        onError: () => {
+          showToast('Erro ao alterar status', 'error')
+        },
+      },
+    )
+  }
+
+  const getApprovalBadgeClasses = (status?: PartnerApprovalStatus) => {
+    if (status === 'approved') return 'bg-green-100 text-green-800'
+    if (status === 'rejected') return 'bg-red-100 text-red-800'
+    return 'bg-yellow-100 text-yellow-800'
+  }
+
+  const getApprovalLabel = (status?: PartnerApprovalStatus) => {
+    if (status === 'approved') return 'Aprovado'
+    if (status === 'rejected') return 'Rejeitado'
+    return 'Pendente'
+  }
+
   const formatPrice = (cents: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -393,6 +460,71 @@ export function PartnerDetailPage() {
         <div className="flex-1">
           <h1 className="text-3xl font-bold text-gray-900">{partner.name}</h1>
           <p className="text-gray-600 mt-1">Slug: {partner.slug}</p>
+        </div>
+        <span
+          className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${getApprovalBadgeClasses(
+            partner.approval_status,
+          )}`}
+        >
+          {getApprovalLabel(partner.approval_status)}
+        </span>
+      </div>
+
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Status de Aprovação</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <span className="text-sm text-gray-600">Status atual:</span>{' '}
+            <span
+              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getApprovalBadgeClasses(
+                partner.approval_status,
+              )}`}
+            >
+              {getApprovalLabel(partner.approval_status)}
+            </span>
+          </div>
+          {partner.approved_at && (
+            <div>
+              <span className="text-sm text-gray-600">Aprovado em:</span>{' '}
+              <span className="text-sm font-medium text-gray-900">{formatDate(partner.approved_at)}</span>
+            </div>
+          )}
+          {partner.rejection_reason && (
+            <div className="md:col-span-2">
+              <span className="text-sm text-gray-600">Motivo da rejeição:</span>{' '}
+              <span className="text-sm font-medium text-red-600">{partner.rejection_reason}</span>
+            </div>
+          )}
+        </div>
+        <div className="flex items-center gap-4 pt-4 border-t border-gray-200">
+          {partner.approval_status !== 'approved' && (
+            <Button
+              onClick={handleApprove}
+              disabled={approvalMutation.isPending}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Aprovar Parceiro
+            </Button>
+          )}
+          {partner.approval_status !== 'rejected' && (
+            <Button
+              variant="outline"
+              onClick={() => setShowRejectModal(true)}
+              disabled={approvalMutation.isPending}
+              className="text-red-600 border-red-300 hover:bg-red-50"
+            >
+              Rejeitar Parceiro
+            </Button>
+          )}
+          {partner.approval_status !== 'pending' && (
+            <Button
+              variant="outline"
+              onClick={handleSetPending}
+              disabled={approvalMutation.isPending}
+            >
+              Voltar para Pendente
+            </Button>
+          )}
         </div>
       </div>
 
@@ -908,6 +1040,60 @@ export function PartnerDetailPage() {
                   className="flex-1"
                 >
                   Criar
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showRejectModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Rejeitar Parceiro</h3>
+              <button
+                onClick={() => {
+                  setShowRejectModal(false)
+                  setRejectionReason('')
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Motivo da rejeição *
+                </label>
+                <textarea
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
+                  placeholder="Informe o motivo da rejeição"
+                />
+              </div>
+              <div className="flex items-center gap-4 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowRejectModal(false)
+                    setRejectionReason('')
+                  }}
+                  className="flex-1"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleReject}
+                  disabled={approvalMutation.isPending || !rejectionReason.trim()}
+                  className="flex-1 bg-red-600 hover:bg-red-700"
+                >
+                  Rejeitar
                 </Button>
               </div>
             </div>

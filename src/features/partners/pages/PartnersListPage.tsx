@@ -1,30 +1,43 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Pencil, Filter, Building2 } from 'lucide-react'
 import { usePartnersList } from '../../../hooks/useAdminPartners'
-import { listCities, type City } from '@features/tours/api'
 import { Button } from '@shared/components/Button'
 import { Input } from '@shared/components/Input'
+import type { PartnerApprovalStatus, PartnerPublic } from '../../../types/partners'
 
 export function PartnersListPage() {
   const navigate = useNavigate()
-  const [typeFilter, setTypeFilter] = useState<string>('')
-  const [cityFilter, setCityFilter] = useState<string>('')
-  const [neighborhoodFilter, setNeighborhoodFilter] = useState<string>('')
-  const [highlightOnly, setHighlightOnly] = useState<boolean>(false)
+  const [approvalStatus, setApprovalStatus] = useState<string>('pending')
+  const [activeFilter, setActiveFilter] = useState<string>('all')
+  const [search, setSearch] = useState<string>('')
 
   const { data: partners, isLoading } = usePartnersList({
-    type: typeFilter || undefined,
-    city_id: cityFilter || undefined,
-    neighborhood: neighborhoodFilter || undefined,
-    highlight_only: highlightOnly || undefined,
+    approval_status: approvalStatus === 'all' ? undefined : (approvalStatus as PartnerApprovalStatus),
+    is_active: activeFilter === 'all' ? undefined : activeFilter === 'active',
+    search: search || undefined,
   })
 
-  const { data: cities = [] } = useQuery<City[]>({
-    queryKey: ['cities'],
-    queryFn: listCities,
-  })
+  const getApprovalBadgeClasses = (status?: PartnerPublic['approval_status']) => {
+    if (status === 'approved') return 'bg-green-100 text-green-800'
+    if (status === 'rejected') return 'bg-red-100 text-red-800'
+    return 'bg-yellow-100 text-yellow-800'
+  }
+
+  const getApprovalLabel = (status?: PartnerPublic['approval_status']) => {
+    if (status === 'approved') return 'Aprovado'
+    if (status === 'rejected') return 'Rejeitado'
+    return 'Pendente'
+  }
+
+  const formatDate = (value?: string | null) => {
+    if (!value) return '-'
+    return new Date(value).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    })
+  }
 
   if (isLoading) {
     return (
@@ -54,59 +67,49 @@ export function PartnersListPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div>
-            <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-2">
-              Tipo
+          <div className="md:col-span-2">
+            <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
+              Busca
             </label>
             <Input
-              id="type"
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              placeholder="Ex: restaurante, hotel"
+              id="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Nome do parceiro"
             />
           </div>
 
           <div>
-            <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-2">
-              Cidade
+            <label htmlFor="approval" className="block text-sm font-medium text-gray-700 mb-2">
+              Status de aprovação
             </label>
             <select
-              id="city"
-              value={cityFilter}
-              onChange={(e) => setCityFilter(e.target.value)}
+              id="approval"
+              value={approvalStatus}
+              onChange={(e) => setApprovalStatus(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
             >
-              <option value="">Todas as cidades</option>
-              {cities.map((city) => (
-                <option key={city.id} value={city.id}>
-                  {city.name}, {city.state}
-                </option>
-              ))}
+              <option value="all">Todos</option>
+              <option value="pending">Pendentes</option>
+              <option value="approved">Aprovados</option>
+              <option value="rejected">Rejeitados</option>
             </select>
           </div>
 
           <div>
-            <label htmlFor="neighborhood" className="block text-sm font-medium text-gray-700 mb-2">
-              Bairro
+            <label htmlFor="is_active" className="block text-sm font-medium text-gray-700 mb-2">
+              Ativo
             </label>
-            <Input
-              id="neighborhood"
-              value={neighborhoodFilter}
-              onChange={(e) => setNeighborhoodFilter(e.target.value)}
-              placeholder="Nome do bairro"
-            />
-          </div>
-
-          <div className="flex items-end">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={highlightOnly}
-                onChange={(e) => setHighlightOnly(e.target.checked)}
-                className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
-              />
-              <span className="text-sm font-medium text-gray-700">Apenas em destaque</span>
-            </label>
+            <select
+              id="is_active"
+              value={activeFilter}
+              onChange={(e) => setActiveFilter(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
+            >
+              <option value="all">Todos</option>
+              <option value="active">Ativos</option>
+              <option value="inactive">Inativos</option>
+            </select>
           </div>
         </div>
       </div>
@@ -137,13 +140,13 @@ export function PartnersListPage() {
                     Cidade
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Bairro
+                    Status de aprovação
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Destaque
+                    Ativo
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
+                    Criado em
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Ações
@@ -160,21 +163,16 @@ export function PartnersListPage() {
                       <div className="text-sm text-gray-900">{partner.type}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {cities.find((c) => c.id === partner.city_id)?.name || '-'}
-                      </div>
+                      <div className="text-sm text-gray-900">{partner.city_name || '-'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{partner.neighborhood || '-'}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {partner.highlight_home ? (
-                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                          Sim
-                        </span>
-                      ) : (
-                        <span className="text-sm text-gray-400">-</span>
-                      )}
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getApprovalBadgeClasses(
+                          partner.approval_status,
+                        )}`}
+                      >
+                        {getApprovalLabel(partner.approval_status)}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {partner.is_active ? (
@@ -187,13 +185,16 @@ export function PartnersListPage() {
                         </span>
                       )}
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{formatDate(partner.created_at)}</div>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <Button
                         variant="ghost"
-                        onClick={() => navigate(`/dashboard/partners/${partner.slug}`)}
+                        onClick={() => navigate(`/dashboard/partners/${partner.id}`)}
                       >
                         <Pencil className="w-4 h-4" />
-                        Editar
+                        Gerenciar
                       </Button>
                     </td>
                   </tr>

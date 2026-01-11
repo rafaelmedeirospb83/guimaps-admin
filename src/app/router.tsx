@@ -95,7 +95,7 @@ export const router = createBrowserRouter([
             element: <PartnerFormPage />,
           },
           {
-            path: ':slug',
+            path: ':id',
             element: <PartnerDetailPage />,
           },
         ],
